@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Project Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Project Tracker</h1>
+    <form id="projectForm">
+        <input type="text" id="projectName" placeholder="Project Name" required>
+        <select id="status">
+            <option value="Won">Won</option>
+            <option value="Lost">Lost</option>
+            <option value="Should Have Won">Should Have Won</option>
+            <option value="TBD">TBD</option>
+            <option value="Canceled">Canceled</option>
+        </select>
+        <input type="number" id="cost" placeholder="Cost" required>
+        <input type="number" id="margin" placeholder="Margin" required>
+        <input type="text" id="distributor" placeholder="Distributor" required>
+        <input type="text" id="contractor" placeholder="Contractor" required>
+        <input type="month" id="date" required>
+        <textarea id="notes" placeholder="Notes"></textarea>
+        <button type="submit">Add Project</button>
+    </form>
+    <div id="projectsContainer"></div>
+    <script src="script.js"></script>
+</body>
+</html>

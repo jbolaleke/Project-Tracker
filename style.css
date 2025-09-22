@@ -1,0 +1,34 @@
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+form {
+    margin-bottom: 20px;
+}
+input, select, textarea {
+    margin: 5px;
+    padding: 5px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+th, td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+.Won { background-color: #d4edda; }
+.Lost { background-color: #f8d7da; }
+.Should\ Have\ Won { background-color: #d1ecf1; }
+.TBD { background-color: #fff3cd; }
+.Canceled { background-color: #d6e0f5; }
+.summary {
+    font-weight: bold;
+    margin-top: 10px;
+}
+.editable {
+    cursor: pointer;
+}
