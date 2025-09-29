@@ -4,28 +4,172 @@
 <head>
     <meta charset="UTF-8">
     <title>Project Tracker</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h2 { margin-top: 40px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .Won { background-color: #d4edda; }
+        .Lost { background-color: #f8d7da; }
+        .TBD { background-color: #fff3cd; }
+        .Canceled { background-color: #d1ecf1; }
+        .ShouldHaveWon { background-color: #d0f0f7; }
+        .summary { margin-top: 10px; font-weight: bold; }
+    </style>
 </head>
 <body>
     <h1>Project Tracker</h1>
     <form id="projectForm">
-        <input type="text" id="projectName" placeholder="Project Name" required>
-        <select id="status">
-            <option value="Won">Won</option>
-            <option value="Lost">Lost</option>
-            <option value="Should Have Won">Should Have Won</option>
-            <option value="TBD">TBD</option>
-            <option value="Canceled">Canceled</option>
-        </select>
-        <input type="number" id="cost" placeholder="Cost" required>
-        <input type="number" id="margin" placeholder="Margin" required>
-        <input type="text" id="distributor" placeholder="Distributor" required>
-        <input type="text" id="contractor" placeholder="Contractor" required>
-        <input type="month" id="date" required>
-        <textarea id="notes" placeholder="Notes"></textarea>
+        <label>Project Name: <input type="text" id="name" required></label><br>
+        <label>Status:
+            <select id="status">
+                <option>Won</option>
+                <option>Lost</option>
+                <option>ShouldHaveWon</option>
+                <option>TBD</option>
+                <option>Canceled</option>
+            </select>
+        </label><br>
+        <label>Cost: <input type="number" id="cost" required></label><br>
+        <label>Margin: <input type="number" id="margin" required></label><br>
+        <label>Distributor: <input type="text" id="distributor"></label><br>
+        <label>Contractor: <input type="text" id="contractor"></label><br>
+        <label>Notes: <input type="text" id="notes"></label><br>
+        <label>Date: <input type="date" id="date" required></label><br>
         <button type="submit">Add Project</button>
     </form>
-    <div id="projectsContainer"></div>
-    <script src="script.js"></script>
+
+    <h2>All Projects</h2>
+    <table id="allProjectsTable">
+        <thead>
+            <tr>
+                <th>Project Name</th>
+                <th>Status</th>
+                <th>Cost</th>
+                <th>Margin</th>
+                <th>Distributor</th>
+                <th>Contractor</th>
+                <th>Notes</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div id="monthlySections"></div>
+
+    <script>
+        const form = document.getElementById('projectForm');
+        const allProjectsTableBody = document.querySelector('#allProjectsTable tbody');
+        const monthlySections = document.getElementById('monthlySections');
+        const projects = [];
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const project = {
+                name: document.getElementById('name').value,
+                status: document.getElementById('status').value,
+                cost: parseFloat(document.getElementById('cost').value),
+                margin: parseFloat(document.getElementById('margin').value),
+                distributor: document.getElementById('distributor').value,
+                contractor: document.getElementById('contractor').value,
+                notes: document.getElementById('notes').value,
+                date: new Date(document.getElementById('date').value)
+            };
+            projects.push(project);
+            updateAllProjectsTable();
+            updateMonthlySections();
+            form.reset();
+        });
+
+        function formatCurrency(value) {
+            return '$' + value.toLocaleString();
+        }
+
+        function updateAllProjectsTable() {
+            allProjectsTableBody.innerHTML = '';
+            projects.forEach(p => {
+                const row = document.createElement('tr');
+                row.className = p.status.replace(/\s/g, '');
+                row.innerHTML = `
+                    <td>${p.name}</td>
+                    <td>${p.status}</td>
+                    <td>${formatCurrency(p.cost)}</td>
+                    <td>${formatCurrency(p.margin)}</td>
+                    <td>${p.distributor}</td>
+                    <td>${p.contractor}</td>
+                    <td>${p.notes}</td>
+                    <td>${p.date.toISOString().split('T')[0]}</td>
+                `;
+                allProjectsTableBody.appendChild(row);
+            });
+        }
+
+        function updateMonthlySections() {
+            const grouped = {};
+            projects.forEach(p => {
+                const key = `${p.date.getFullYear()}-${String(p.date.getMonth()+1).padStart(2, '0')}`;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push(p);
+            });
+
+            monthlySections.innerHTML = '';
+            for (const month in grouped) {
+                const section = document.createElement('div');
+                section.innerHTML = `<h2>${month}</h2>`;
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Status</th>
+                            <th>Cost</th>
+                            <th>Margin</th>
+                            <th>Distributor</th>
+                            <th>Contractor</th>
+                            <th>Notes</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+                const tbody = table.querySelector('tbody');
+                let won = 0, total = 0, lostValue = 0, wonMargin = 0;
+                grouped[month].forEach(p => {
+                    const row = document.createElement('tr');
+                    row.className = p.status.replace(/\s/g, '');
+                    row.innerHTML = `
+                        <td>${p.name}</td>
+                        <td>${p.status}</td>
+                        <td>${formatCurrency(p.cost)}</td>
+                        <td>${formatCurrency(p.margin)}</td>
+                        <td>${p.distributor}</td>
+                        <td>${p.contractor}</td>
+                        <td>${p.notes}</td>
+                        <td>${p.date.toISOString().split('T')[0]}</td>
+                    `;
+                    tbody.appendChild(row);
+                    if (p.status !== 'TBD') total++;
+                    if (p.status === 'Won') won++;
+                    if (p.status === 'Lost' || p.status === 'ShouldHaveWon') lostValue += p.cost;
+                    if (p.status === 'Won') wonMargin += p.margin;
+                });
+                const winPercent = total ? ((won / total) * 100).toFixed(2) : '0.00';
+                const summary = document.createElement('div');
+                summary.className = 'summary';
+                summary.innerHTML = `
+                    Total Projects: ${total} |
+                    Won: ${won} |
+                    Win %: ${winPercent}% |
+                    Dollars Lost: ${formatCurrency(lostValue)} |
+                    Margin from Won: ${formatCurrency(wonMargin)}
+                `;
+                section.appendChild(table);
+                section.appendChild(summary);
+                monthlySections.appendChild(section);
+            }
+        }
+    </script>
 </body>
 </html>
