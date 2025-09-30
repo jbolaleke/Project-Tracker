@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .Won { background-color: #d4edda; }
+    .Lost { background-color: #f8d7da; }
+    .TBD { background-color: #fff3cd; }
+    .Canceled { background-color: #d1ecf1; }
+    .ShouldHaveWon { background-color: #d0f0f7; }
+    .summary { margin-top: 10px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Project Tracker</h1>
+  <form id="projectForm">
+    <label>Project Name: <input type="text" id="name" required></label><br>
+    <label>Status:
+      <select id="status">
+        <option>Won</option>
+        <option>Lost</option>
+        <option>Should Have Won</option>
+        <option>TBD</option>
+        <option>Canceled</option>
+      </select>
+    </label><br>
+    <label>Cost: <input type="number" id="cost" required></label><br>
+    <label>Margin: <input type="number" id="margin" required></label><br>
+    <label>Distributor: <input type="text" id="distributor"></label><br>
+    <label>Contractor: <input type="text" id="contractor"></label><br>
+    <label>Notes: <input type="text" id="notes"></label><br>
+    <label>Date: <input type="date" id="date" required></label><br>
+    <button type="submit">Add Project</button>
+  </form>
+
+  <div id="projectTableContainer"></div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://fjqlkexrgaywlmpzetwx.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqcWxrZXhyZ2F5d2xtcHpldHd4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyMDU4NTIsImV4cCI6MjA3NDc4MTg1Mn0.5p3siXhDC6QTWfWWdi4cVKCSi_k3_T_wVUJRH6j_N1E'
+    );
+
+    const form = document.getElementById('projectForm');
+    const container = document.getElementById('projectTableContainer');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const project = {
+        name: document.getElementById('name').value,
+        status: document.getElementById('status').value,
+        cost: parseFloat(document.getElementById('cost').value),
+        margin: parseFloat(document.getElementById('margin').value),
+        distributor: document.getElementById('distributor').value,
+        contractor: document.getElementById('contractor').value,
+        notes: document.getElementById('notes').value,
+        date: document.getElementById('date').value
+      };
+      await supabase.from('projects').insert([project]);
+      form.reset();
+      loadProjects();
+    });
+
+    function formatCurrency(value) {
+      return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    }
+
+    function getStatusClass(status) {
+      return status.replace(/\s+/g, '');
+    }
+
+    function summarizeProjects(projects) {
+      const grouped = {};
+      for (const p of projects) {
+        const date = new Date(p.date);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(p);
+      }
+
+      let html = '';
+      for (const month in grouped) {
+        html += `<h2>${month}</h2><table><thead><tr>
+          <th>Name</th><th>Status</th><th>Cost</th><th>Margin</th><th>Distributor</th><th>Contractor</th><th>Notes</th><th>Date</th>
+        </tr></thead><tbody>`;
+        let won = 0, total = 0, lostValue = 0;
+        for (const p of grouped[month]) {
+          const statusClass = getStatusClass(p.status);
+          html += `<tr class="${statusClass}">
+            <td>${p.name}</td>
+            <td>${p.status}</td>
+            <td>${formatCurrency(p.cost)}</td>
+            <td>${formatCurrency(p.margin)}</td>
+            <td>${p.distributor}</td>
+            <td>${p.contractor}</td>
+            <td>${p.notes}</td>
+            <td>${p.date}</td>
+          </tr>`;
+          if (p.status !== 'TBD') total++;
+          if (p.status === 'Won') won++;
+          if (p.status === 'Lost' || p.status === 'Should Have Won') lostValue += p.cost;
+        }
+        const winPct = total > 0 ? ((won / total) * 100).toFixed(1) : '0.0';
+        html += `</tbody></table>
+          <div class="summary">Total Projects: ${total}, Won: ${won}, Win %: ${winPct}%, Dollars Lost: ${formatCurrency(lostValue)}</div>`;
+      }
+      return html;
+    }
+
+    async function loadProjects() {
+      const { data: projects } = await supabase.from('projects').select('*').order('date', { ascending: true });
+      container.innerHTML = summarizeProjects(projects);
+    }
+
+    loadProjects();
+  </script>
+</body>
+</html>
